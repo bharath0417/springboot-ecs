@@ -18,7 +18,7 @@ pipeline {
                 	branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, 
                 	extensions: [], 
                 	submoduleCfg: [], 
-                	userRemoteConfigs: [[url: 'https://github.com/bharath0417/springboot-hello.git']]])
+                	userRemoteConfigs: [[url: 'https://github.com/bharath0417/springboot-ecs.git']]])
             }
         }
         stage ('Build Artifact') {
