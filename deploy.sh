@@ -3,7 +3,7 @@ set -x
 #Constants
 PATH=$PATH:/usr/local/bin; export PATH
 REGION=ap-south-1
-REPOSITORY_NAME=ecs-task
+REPOSITORY_NAME=spring-ecs
 CLUSTER=springboot-cluster
 FAMILY=`sed -n 's/.*"family": "\(.*\)",/\1/p' aws-task-latest.json`
 NAME=`sed -n 's/.*"name": "\(.*\)",/\1/p' aws-task-latest.json`

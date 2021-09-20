@@ -1,10 +1,12 @@
 pipeline {
     agent any
-	environment {
-		registry = 'ecs-task:v_$BUILD_NUMBER'
+tools { 
+        maven 'Maven'
+    }
+environment {
+		registry = 'spring-ecs:v_$BUILD_NUMBER'
 		registryUrl='421168438563.dkr.ecr.ap-south-1.amazonaws.com'
-		registryCredentials = 'ecr:ap-south-1:docker_credentials'
-		dockerImage = ''
+
 	}
     stages {
         stage('CleanWorkspace') {
@@ -26,27 +28,24 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
-        stage ('Build Docker Image') {
-            steps {
-                script {
-                    dockerImage = docker.build registry
+      stage("Build the docker image"){
+            steps{
+                sh 'docker image build -t 421168438563.dkr.ecr.ap-south-1.amazonaws.com/spring-ecs:${BUILD_NUMBER} .'
+                }
+            }          
+      stage("Push the docker image to ecr registry"){
+            steps{
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'ecr_credentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 421168438563.dkr.ecr.ap-south-1.amazonaws.com'
+                    sh 'docker image push 421168438563.dkr.ecr.ap-south-1.amazonaws.com/spring-ecs:${BUILD_NUMBER}'
                 }
             }
         }
-        stage ('Docker Push') {
+        stage ('ecs-deploy') {
             steps {
                 script {
-                    docker.withRegistry(registryUrl,registryCredentials) {
-                        dockerImage.push()
-                    }
-                }
-            }
-        }
-                stage ('ecs-deploy') {
-            steps {
-                script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'docker_credentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                        docker.withRegistry(registryUrl,registryCredentials) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'ecr_credentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) 
+                         {
                             sh """
                                 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
                                 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
@@ -54,9 +53,11 @@ pipeline {
                                 chmod +x deploy.sh
                                 ./deploy.sh"""
                         }
-                    }
+                    
                 }
             }
         }
     }
-}
+}          
+    
+
